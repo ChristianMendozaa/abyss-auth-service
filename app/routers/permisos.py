@@ -4,7 +4,7 @@ from sqlalchemy import select
 from typing import List
 
 from app.database import get_db
-from app.deps import get_current_user, require_owner, CurrentUser
+from app.deps import get_current_user, require_permission, CurrentUser
 from app.models.permiso import Permiso
 from app.schemas.permiso import PermisoCreate, PermisoUpdate, PermisoResponse
 
@@ -14,10 +14,10 @@ router = APIRouter(prefix="/permisos", tags=["permisos"])
 @router.post("", response_model=PermisoResponse, status_code=status.HTTP_201_CREATED)
 async def create_permiso(
     permiso_create: PermisoCreate,
-    current_user: CurrentUser = Depends(require_owner()),
+    current_user: CurrentUser = Depends(require_permission("create", "permisos")),
     db: AsyncSession = Depends(get_db),
 ):
-    """Create a new permission (owners only)."""
+    """Create a new permission."""
     # Check if permission already exists (accion + recurso combination must be unique)
     result = await db.execute(
         select(Permiso).where(
@@ -46,7 +46,7 @@ async def create_permiso(
 
 @router.get("", response_model=List[PermisoResponse])
 async def list_permisos(
-    current_user: CurrentUser = Depends(get_current_user),
+    current_user: CurrentUser = Depends(require_permission("read", "permisos")),
     db: AsyncSession = Depends(get_db),
 ):
     """List all available global permissions."""
@@ -59,7 +59,7 @@ async def list_permisos(
 @router.get("/{permiso_id}", response_model=PermisoResponse)
 async def get_permiso(
     permiso_id: int,
-    current_user: CurrentUser = Depends(get_current_user),
+    current_user: CurrentUser = Depends(require_permission("read", "permisos")),
     db: AsyncSession = Depends(get_db),
 ):
     """Get a specific permission by ID."""
@@ -81,10 +81,10 @@ async def get_permiso(
 async def update_permiso(
     permiso_id: int,
     permiso_update: PermisoUpdate,
-    current_user: CurrentUser = Depends(require_owner()),
+    current_user: CurrentUser = Depends(require_permission("update", "permisos")),
     db: AsyncSession = Depends(get_db),
 ):
-    """Update a permission (owners only)."""
+    """Update a permission."""
     result = await db.execute(
         select(Permiso).where(Permiso.id_permiso == permiso_id)
     )
@@ -132,10 +132,10 @@ async def update_permiso(
 @router.delete("/{permiso_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_permiso(
     permiso_id: int,
-    current_user: CurrentUser = Depends(require_owner()),
+    current_user: CurrentUser = Depends(require_permission("delete", "permisos")),
     db: AsyncSession = Depends(get_db),
 ):
-    """Delete a permission (owners only)."""
+    """Delete a permission."""
     result = await db.execute(
         select(Permiso).where(Permiso.id_permiso == permiso_id)
     )

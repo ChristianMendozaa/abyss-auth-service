@@ -245,19 +245,74 @@ El servicio utiliza las siguientes tablas (ya deben existir en tu base de datos)
    - Se obtiene usuario + empresa + roles + permisos de PostgreSQL
    - Se retorna `CurrentUser` con toda la información
 
-### Sistema de Autorización
+### Sistema de Autorización (RBAC)
+
+El sistema utiliza un modelo de control de acceso basado en roles (RBAC) con permisos granulares definidos por **acción** y **recurso**.
+
+#### Estructura de Permisos
+
+Cada permiso tiene dos componentes:
+- **Acción**: Qué puede hacer (`create`, `read`, `update`, `delete`)
+- **Recurso**: Sobre qué tabla/entidad (`empresas`, `usuarios`, `roles`, `permisos`, `roles_permisos`, `usuarios_roles`)
+
+#### Permisos Disponibles
+
+Los permisos se definen automáticamente al insertar en la base de datos según este patrón:
+
+```sql
+-- Para cada recurso (empresas, usuarios, roles, permisos, roles_permisos, usuarios_roles)
+INSERT INTO permisos (accion, recurso) VALUES
+  ('create', 'recurso'),
+  ('read',   'recurso'),
+  ('update', 'recurso'),
+  ('delete', 'recurso');
+```
+
+**Recursos disponibles:**
+- `empresas`: Gestión de información de la empresa
+- `usuarios`: Gestión de empleados
+- `roles`: Gestión de roles
+- `permisos`: Gestión de permisos globales
+- `roles_permisos`: Asignación de permisos a roles
+- `usuarios_roles`: Asignación de roles a usuarios
 
 #### Niveles de Acceso:
 
 1. **Dueños (`es_dueno=true`):**
    - Acceso completo a todas las funciones de su empresa
+   - Tienen automáticamente todos los permisos sin necesidad de roles
    - Pueden gestionar empresa, usuarios, roles y permisos
-   - No necesitan permisos específicos asignados
+   - La función `has_permission()` siempre retorna `True` para dueños
 
 2. **Empleados:**
    - Acceso basado en permisos asignados mediante roles
    - Solo pueden realizar acciones para las que tienen permiso
    - Los permisos se obtienen de los roles asignados
+   - Deben tener roles con permisos específicos para acceder a funciones
+
+#### Mapeo de Endpoints a Permisos:
+
+| Endpoint | Método | Permiso Requerido |
+|----------|--------|-------------------|
+| `/empresa` | GET | `read` en `empresas` |
+| `/empresa` | PUT | `update` en `empresas` |
+| `/empresa` | DELETE | `delete` en `empresas` |
+| `/usuarios` | POST | `create` en `usuarios` |
+| `/usuarios` | GET | `read` en `usuarios` |
+| `/usuarios/{id}` | PATCH | `update` en `usuarios` |
+| `/usuarios/{id}` | DELETE | `delete` en `usuarios` |
+| `/usuarios/{id}/roles` | POST | `create` en `usuarios_roles` |
+| `/usuarios/{id}/roles` | GET | `read` en `usuarios_roles` |
+| `/usuarios/{id}/roles/{rol_id}` | DELETE | `delete` en `usuarios_roles` |
+| `/roles` | POST | `create` en `roles` + `create` en `roles_permisos` (si asigna permisos) |
+| `/roles` | GET | `read` en `roles` |
+| `/roles/{id}` | PATCH | `update` en `roles` + `update/delete/create` en `roles_permisos` (si modifica permisos) |
+| `/roles/{id}` | DELETE | `delete` en `roles` |
+| `/permisos` | POST | `create` en `permisos` |
+| `/permisos` | GET | `read` en `permisos` |
+| `/permisos/{id}` | GET | `read` en `permisos` |
+| `/permisos/{id}` | PATCH | `update` en `permisos` |
+| `/permisos/{id}` | DELETE | `delete` en `permisos` |
 
 #### Dependencias de Autorización:
 
@@ -266,11 +321,19 @@ El servicio utiliza las siguientes tablas (ya deben existir en tu base de datos)
 current_user: CurrentUser = Depends(get_current_user)
 
 # Requiere permiso específico (dueños tienen acceso automático)
-current_user: CurrentUser = Depends(require_permission("create", "usuario"))
+# Ejemplo: requiere permiso "create" en recurso "usuarios"
+current_user: CurrentUser = Depends(require_permission("create", "usuarios"))
 
-# Requiere ser dueño
+# Requiere ser dueño (para operaciones críticas)
 current_user: CurrentUser = Depends(require_owner())
 ```
+
+#### Validaciones Especiales:
+
+- **Asignar permisos a roles**: Requiere permiso `create` en `roles_permisos`
+- **Modificar permisos de un rol**: Requiere `update` y `delete` en `roles_permisos`
+- **Asignar roles a usuarios**: Requiere permiso `create` en `usuarios_roles`
+- **Crear nuevos permisos al crear rol**: Requiere permiso `create` en `permisos`
 
 ## 📡 API Endpoints
 
@@ -368,12 +431,12 @@ Obtiene información del usuario autenticado actual.
 Todos los endpoints requieren autenticación.
 
 #### `GET /empresa`
-Obtiene información de la empresa del usuario actual.
+Obtiene información de la empresa del usuario actual (requiere permiso `read` en `empresas`).
 
 **Response:** 200 OK
 
 #### `PUT /empresa`
-Actualiza información de la empresa (solo dueños).
+Actualiza información de la empresa (requiere permiso `update` en `empresas`).
 
 **Request:**
 ```json
@@ -395,14 +458,14 @@ Actualiza información de la empresa (solo dueños).
 - `telefono`: máximo 15 caracteres
 
 #### `DELETE /empresa`
-Elimina (soft delete) la empresa (solo dueños).
+Elimina (soft delete) la empresa (requiere permiso `delete` en `empresas`).
 
 **Response:** 204 No Content
 
 ### Usuarios (`/usuarios`)
 
 #### `POST /usuarios`
-Crea un nuevo empleado (requiere permiso `create` en `usuario`).
+Crea un nuevo empleado (requiere permiso `create` en `usuarios`).
 
 **Request:**
 ```json
@@ -419,12 +482,12 @@ Crea un nuevo empleado (requiere permiso `create` en `usuario`).
 - `nombre` y `apellido`: máximo 30 caracteres cada uno
 
 #### `GET /usuarios`
-Lista todos los empleados de la empresa (requiere permiso `read` en `usuario`).
+Lista todos los empleados de la empresa (requiere permiso `read` en `usuarios`).
 
 **Response:** 200 OK (lista de usuarios, excluye dueños)
 
 #### `PATCH /usuarios/{usuario_id}`
-Actualiza información de un empleado (requiere permiso `update` en `usuario`).
+Actualiza información de un empleado (requiere permiso `update` en `usuarios`).
 
 **Request:**
 ```json
@@ -440,7 +503,28 @@ Actualiza información de un empleado (requiere permiso `update` en `usuario`).
 - Si se actualiza email, verifica que no esté en uso
 
 #### `DELETE /usuarios/{usuario_id}`
-Elimina (soft delete) un empleado (requiere permiso `delete` en `usuario`).
+Elimina (soft delete) un empleado (requiere permiso `delete` en `usuarios`).
+
+#### `POST /usuarios/{usuario_id}/roles`
+Asigna roles a un usuario (requiere permiso `create` en `usuarios_roles`).
+
+**Request:**
+```json
+{
+  "roles_ids": [1, 2, 3]
+}
+```
+
+**Validaciones:**
+- Todos los roles deben pertenecer a la misma empresa
+- Elimina duplicados automáticamente
+- Si la lista está vacía, quita todos los roles
+
+#### `GET /usuarios/{usuario_id}/roles`
+Obtiene los roles asignados a un usuario (requiere permiso `read` en `usuarios_roles`).
+
+#### `DELETE /usuarios/{usuario_id}/roles/{rol_id}`
+Quita un rol específico de un usuario (requiere permiso `delete` en `usuarios_roles`).
 
 **Response:** 204 No Content
 
@@ -489,7 +573,11 @@ Quita un rol específico de un usuario.
 ### Roles (`/roles`)
 
 #### `POST /roles`
-Crea un nuevo rol (requiere permiso `create` en `rol`).
+Crea un nuevo rol (requiere permiso `create` en `roles`).
+
+**Permisos adicionales requeridos:**
+- Si asigna permisos existentes: requiere permiso `create` en `roles_permisos`
+- Si crea nuevos permisos: requiere permiso `create` en `permisos` además de `roles_permisos`
 
 **Request:**
 ```json
@@ -515,12 +603,16 @@ Crea un nuevo rol (requiere permiso `create` en `rol`).
 - `permisos_nuevos`: Permisos nuevos a crear si no existen (se reutilizan si ya existen)
 
 #### `GET /roles`
-Lista todos los roles de la empresa (requiere permiso `read` en `rol`).
+Lista todos los roles de la empresa (requiere permiso `read` en `roles`).
 
 **Response:** 200 OK (lista de roles con sus permisos)
 
 #### `PATCH /roles/{rol_id}`
-Actualiza un rol (requiere permiso `update` en `rol`).
+Actualiza un rol (requiere permiso `update` en `roles`).
+
+**Permisos adicionales si modifica permisos:**
+- Requiere `update` y `delete` en `roles_permisos` para modificar permisos del rol
+- Requiere `create` en `roles_permisos` para asignar nuevos permisos
 
 **Request:**
 ```json
@@ -532,14 +624,14 @@ Actualiza un rol (requiere permiso `update` en `rol`).
 ```
 
 #### `DELETE /roles/{rol_id}`
-Elimina un rol (requiere permiso `delete` en `rol`).
+Elimina un rol (requiere permiso `delete` en `roles`).
 
 **Response:** 204 No Content
 
 ### Permisos (`/permisos`)
 
 #### `POST /permisos`
-Crea un nuevo permiso global (solo dueños).
+Crea un nuevo permiso global (requiere permiso `create` en `permisos`).
 
 **Request:**
 ```json
@@ -564,7 +656,7 @@ Obtiene un permiso específico.
 **Response:** 200 OK
 
 #### `PATCH /permisos/{permiso_id}`
-Actualiza un permiso (solo dueños).
+Actualiza un permiso (requiere permiso `update` en `permisos`).
 
 **Request:**
 ```json
@@ -575,7 +667,7 @@ Actualiza un permiso (solo dueños).
 ```
 
 #### `DELETE /permisos/{permiso_id}`
-Elimina un permiso (solo dueños, solo si no está en uso).
+Elimina un permiso (requiere permiso `delete` en `permisos`).
 
 **Validaciones:**
 - No se puede eliminar si está siendo usado por algún rol

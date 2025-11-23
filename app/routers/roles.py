@@ -15,10 +15,15 @@ router = APIRouter(prefix="/roles", tags=["roles"])
 @router.post("", response_model=RolResponse, status_code=status.HTTP_201_CREATED)
 async def create_rol(
     rol_create: RolCreate,
-    current_user: CurrentUser = Depends(require_permission("create", "rol")),
+    current_user: CurrentUser = Depends(require_permission("create", "roles")),
     db: AsyncSession = Depends(get_db),
 ):
-    """Create a new role for the company."""
+    """Create a new role for the company.
+    
+    Requires:
+    - Permission 'create' on 'roles'
+    - If assigning permissions: Permission 'create' on 'roles_permisos'
+    """
     # Check if role name already exists in company
     result = await db.execute(
         select(Rol).where(
@@ -87,8 +92,14 @@ async def create_rol(
     db.add(rol)
     await db.flush()
     
-    # Add permissions to role
+    # Check permission to manage roles_permisos if assigning permissions
     if permisos:
+        if not current_user.has_permission("create", "roles_permisos"):
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Permission denied: create on roles_permisos (required to assign permissions to roles)",
+            )
+        
         for permiso in permisos:
             rol_permiso = RolPermiso(
                 permisos_id_permiso=permiso.id_permiso,
@@ -125,7 +136,7 @@ async def create_rol(
 
 @router.get("", response_model=List[RolResponse])
 async def list_roles(
-    current_user: CurrentUser = Depends(require_permission("read", "rol")),
+    current_user: CurrentUser = Depends(require_permission("read", "roles")),
     db: AsyncSession = Depends(get_db),
 ):
     """List all roles in current user's company."""
@@ -170,7 +181,7 @@ async def list_roles(
 async def update_rol(
     rol_id: int,
     rol_update: RolUpdate,
-    current_user: CurrentUser = Depends(require_permission("update", "rol")),
+    current_user: CurrentUser = Depends(require_permission("update", "roles")),
     db: AsyncSession = Depends(get_db),
 ):
     """Update role information."""
@@ -199,11 +210,20 @@ async def update_rol(
     
     # Update permissions if provided
     if permisos_ids is not None:
-        # Remove existing permissions
-        delete_result = await db.execute(
-            select(RolPermiso).where(RolPermiso.roles_id_rol == rol.id_rol)
-        )
-        existing_permisos = delete_result.scalars().all()
+        # Verify user has permission to manage roles_permisos
+        if not current_user.has_permission("update", "roles_permisos"):
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Permission denied: update on roles_permisos (required to modify permissions of roles)",
+            )
+        
+        # Remove existing permissions (requires delete permission on roles_permisos)
+        if not current_user.has_permission("delete", "roles_permisos"):
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Permission denied: delete on roles_permisos (required to remove permissions from roles)",
+            )
+        
         from sqlalchemy import delete
         await db.execute(
             delete(RolPermiso).where(RolPermiso.roles_id_rol == rol.id_rol)
@@ -220,6 +240,13 @@ async def update_rol(
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
                     detail="Some permissions not found",
+                )
+            
+            # Verify user has permission to create roles_permisos
+            if not current_user.has_permission("create", "roles_permisos"):
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail="Permission denied: create on roles_permisos (required to assign permissions to roles)",
                 )
             
             for permiso in permisos:
@@ -259,7 +286,7 @@ async def update_rol(
 @router.delete("/{rol_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_rol(
     rol_id: int,
-    current_user: CurrentUser = Depends(require_permission("delete", "rol")),
+    current_user: CurrentUser = Depends(require_permission("delete", "roles")),
     db: AsyncSession = Depends(get_db),
 ):
     """Delete role."""

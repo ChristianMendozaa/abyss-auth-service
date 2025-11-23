@@ -21,7 +21,7 @@ router = APIRouter(prefix="/usuarios", tags=["usuarios"])
 @router.post("", response_model=UsuarioResponse, status_code=status.HTTP_201_CREATED)
 async def create_usuario(
     usuario_create: UsuarioCreate,
-    current_user: CurrentUser = Depends(require_permission("create", "usuario")),
+    current_user: CurrentUser = Depends(require_permission("create", "usuarios")),
     db: AsyncSession = Depends(get_db),
 ):
     """Create a new employee user."""
@@ -95,7 +95,7 @@ async def create_usuario(
 
 @router.get("", response_model=List[UsuarioResponse])
 async def list_usuarios(
-    current_user: CurrentUser = Depends(require_permission("read", "usuario")),
+    current_user: CurrentUser = Depends(require_permission("read", "usuarios")),
     db: AsyncSession = Depends(get_db),
 ):
     """List all employees in current user's company."""
@@ -113,7 +113,7 @@ async def list_usuarios(
 async def update_usuario(
     usuario_id: int,
     usuario_update: UsuarioUpdate,
-    current_user: CurrentUser = Depends(require_permission("update", "usuario")),
+    current_user: CurrentUser = Depends(require_permission("update", "usuarios")),
     db: AsyncSession = Depends(get_db),
 ):
     """Update employee information."""
@@ -192,7 +192,7 @@ async def update_usuario(
 @router.delete("/{usuario_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_usuario(
     usuario_id: int,
-    current_user: CurrentUser = Depends(require_permission("delete", "usuario")),
+    current_user: CurrentUser = Depends(require_permission("delete", "usuarios")),
     db: AsyncSession = Depends(get_db),
 ):
     """Delete employee (soft delete)."""
@@ -228,10 +228,13 @@ async def delete_usuario(
 async def assign_roles_to_usuario(
     usuario_id: int,
     roles_assign: UsuarioRolAssign,
-    current_user: CurrentUser = Depends(require_permission("update", "usuario")),
+    current_user: CurrentUser = Depends(require_permission("create", "usuarios_roles")),
     db: AsyncSession = Depends(get_db),
 ):
-    """Assign roles to a user."""
+    """Assign roles to a user.
+    
+    Requires permission 'create' on 'usuarios_roles'.
+    """
     # Get user
     result = await db.execute(
         select(Usuario)
@@ -321,7 +324,7 @@ async def assign_roles_to_usuario(
 @router.get("/{usuario_id}/roles", response_model=UsuarioWithRolesResponse)
 async def get_usuario_roles(
     usuario_id: int,
-    current_user: CurrentUser = Depends(require_permission("read", "usuario")),
+    current_user: CurrentUser = Depends(require_permission("read", "usuarios_roles")),
     db: AsyncSession = Depends(get_db),
 ):
     """Get roles assigned to a user."""
@@ -370,7 +373,7 @@ async def get_usuario_roles(
 async def remove_role_from_usuario(
     usuario_id: int,
     rol_id: int,
-    current_user: CurrentUser = Depends(require_permission("update", "usuario")),
+    current_user: CurrentUser = Depends(require_permission("delete", "usuarios_roles")),
     db: AsyncSession = Depends(get_db),
 ):
     """Remove a role from a user."""
