@@ -1,0 +1,512 @@
+{
+	"info": {
+		"_postman_id": "auth-service-collection",
+		"name": "Auth Service API",
+		"description": "Microservice de autenticación con Supabase y PostgreSQL",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Auth",
+			"item": [
+				{
+					"name": "Register Owner",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"nombre\": \"Juan\",\n  \"apellido\": \"Pérez\",\n  \"email\": \"juan@example.com\",\n  \"password\": \"password123\",\n  \"nombre_empresa\": \"Mi Empresa S.A.\",\n  \"razon_social\": \"Mi Empresa S.A.\",\n  \"nit\": \"123456789\",\n  \"telefono\": \"+1234567890\",\n  \"email_empresa\": \"contacto@miempresa.com\",\n  \"direccion\": \"Calle 123, Ciudad\"\n}"
+						},
+						"url": {
+							"raw": "http://localhost:8000/auth/register-owner",
+							"protocol": "http",
+							"host": ["localhost"],
+							"port": "8000",
+							"path": ["auth", "register-owner"]
+						},
+						"description": "Registra un nuevo dueño con empresa"
+					},
+					"response": []
+				},
+				{
+					"name": "Login",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// La cookie se establece automáticamente por el navegador/Postman"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"juan@example.com\",\n  \"password\": \"password123\"\n}"
+						},
+						"url": {
+							"raw": "http://localhost:8000/auth/login",
+							"protocol": "http",
+							"host": ["localhost"],
+							"port": "8000",
+							"path": ["auth", "login"]
+						},
+						"description": "Inicia sesión y establece cookie HTTP-only"
+					},
+					"response": []
+				},
+				{
+					"name": "Logout",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:8000/auth/logout",
+							"protocol": "http",
+							"host": ["localhost"],
+							"port": "8000",
+							"path": ["auth", "logout"]
+						},
+						"description": "Cierra sesión y elimina cookie"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Current User",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:8000/auth/me",
+							"protocol": "http",
+							"host": ["localhost"],
+							"port": "8000",
+							"path": ["auth", "me"]
+						},
+						"description": "Obtiene información del usuario autenticado actual"
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Empresa",
+			"item": [
+				{
+					"name": "Get Empresa",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:8000/empresa",
+							"protocol": "http",
+							"host": ["localhost"],
+							"port": "8000",
+							"path": ["empresa"]
+						},
+						"description": "Obtiene información de la empresa del usuario actual"
+					},
+					"response": []
+				},
+				{
+					"name": "Update Empresa",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"nombre\": \"Empresa Actualizada S.A.\",\n  \"razon_social\": \"Empresa Actualizada S.A.\",\n  \"nit\": \"987654321\",\n  \"telefono\": \"+9876543210\",\n  \"email_empresa\": \"nuevo@empresa.com\",\n  \"direccion\": \"Nueva Dirección 456\",\n  \"estado\": true\n}"
+						},
+						"url": {
+							"raw": "http://localhost:8000/empresa",
+							"protocol": "http",
+							"host": ["localhost"],
+							"port": "8000",
+							"path": ["empresa"]
+						},
+						"description": "Actualiza información de la empresa (solo dueños)"
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Empresa",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:8000/empresa",
+							"protocol": "http",
+							"host": ["localhost"],
+							"port": "8000",
+							"path": ["empresa"]
+						},
+						"description": "Elimina (soft delete) la empresa (solo dueños)"
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Usuarios",
+			"item": [
+				{
+					"name": "Create Usuario",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"nombre\": \"María\",\n  \"apellido\": \"González\",\n  \"email\": \"maria@example.com\",\n  \"password\": \"password123\"\n}"
+						},
+						"url": {
+							"raw": "http://localhost:8000/usuarios",
+							"protocol": "http",
+							"host": ["localhost"],
+							"port": "8000",
+							"path": ["usuarios"]
+						},
+						"description": "Crea un nuevo empleado en la empresa"
+					},
+					"response": []
+				},
+				{
+					"name": "List Usuarios",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:8000/usuarios",
+							"protocol": "http",
+							"host": ["localhost"],
+							"port": "8000",
+							"path": ["usuarios"]
+						},
+						"description": "Lista todos los empleados de la empresa"
+					},
+					"response": []
+				},
+				{
+					"name": "Update Usuario",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"nombre\": \"María\",\n  \"apellido\": \"González López\",\n  \"email\": \"maria.nueva@example.com\",\n  \"estado\": true\n}"
+						},
+						"url": {
+							"raw": "http://localhost:8000/usuarios/2",
+							"protocol": "http",
+							"host": ["localhost"],
+							"port": "8000",
+							"path": ["usuarios", "2"]
+						},
+						"description": "Actualiza información de un empleado"
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Usuario",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:8000/usuarios/2",
+							"protocol": "http",
+							"host": ["localhost"],
+							"port": "8000",
+							"path": ["usuarios", "2"]
+						},
+						"description": "Elimina (soft delete) un empleado"
+					},
+					"response": []
+				},
+				{
+					"name": "Assign Roles to Usuario",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"roles_ids\": [1, 2]\n}"
+						},
+						"url": {
+							"raw": "http://localhost:8000/usuarios/2/roles",
+							"protocol": "http",
+							"host": ["localhost"],
+							"port": "8000",
+							"path": ["usuarios", "2", "roles"]
+						},
+						"description": "Asigna roles a un usuario (reemplaza los roles existentes)"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Usuario Roles",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:8000/usuarios/2/roles",
+							"protocol": "http",
+							"host": ["localhost"],
+							"port": "8000",
+							"path": ["usuarios", "2", "roles"]
+						},
+						"description": "Obtiene los roles asignados a un usuario"
+					},
+					"response": []
+				},
+				{
+					"name": "Remove Role from Usuario",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:8000/usuarios/2/roles/1",
+							"protocol": "http",
+							"host": ["localhost"],
+							"port": "8000",
+							"path": ["usuarios", "2", "roles", "1"]
+						},
+						"description": "Elimina un rol específico de un usuario"
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Roles",
+			"item": [
+				{
+					"name": "Create Rol",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"nombre\": \"Gerente\",\n  \"descripcion\": \"Rol de gerente con permisos administrativos\",\n  \"permisos_ids\": [1, 2, 3],\n  \"permisos_nuevos\": [\n    {\n      \"accion\": \"approve\",\n      \"recurso\": \"documento\"\n    },\n    {\n      \"accion\": \"reject\",\n      \"recurso\": \"documento\"\n    }\n  ]\n}"
+						},
+						"url": {
+							"raw": "http://localhost:8000/roles",
+							"protocol": "http",
+							"host": ["localhost"],
+							"port": "8000",
+							"path": ["roles"]
+						},
+						"description": "Crea un nuevo rol para la empresa"
+					},
+					"response": []
+				},
+				{
+					"name": "List Roles",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:8000/roles",
+							"protocol": "http",
+							"host": ["localhost"],
+							"port": "8000",
+							"path": ["roles"]
+						},
+						"description": "Lista todos los roles de la empresa"
+					},
+					"response": []
+				},
+				{
+					"name": "Update Rol",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"nombre\": \"Gerente Senior\",\n  \"descripcion\": \"Rol actualizado de gerente\",\n  \"permisos_ids\": [1, 2, 3, 4]\n}"
+						},
+						"url": {
+							"raw": "http://localhost:8000/roles/1",
+							"protocol": "http",
+							"host": ["localhost"],
+							"port": "8000",
+							"path": ["roles", "1"]
+						},
+						"description": "Actualiza información de un rol"
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Rol",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:8000/roles/1",
+							"protocol": "http",
+							"host": ["localhost"],
+							"port": "8000",
+							"path": ["roles", "1"]
+						},
+						"description": "Elimina un rol"
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Permisos",
+			"item": [
+				{
+					"name": "Create Permiso",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"accion\": \"create\",\n  \"recurso\": \"documento\"\n}"
+						},
+						"url": {
+							"raw": "http://localhost:8000/permisos",
+							"protocol": "http",
+							"host": ["localhost"],
+							"port": "8000",
+							"path": ["permisos"]
+						},
+						"description": "Crea un nuevo permiso (solo dueños)"
+					},
+					"response": []
+				},
+				{
+					"name": "List Permisos",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:8000/permisos",
+							"protocol": "http",
+							"host": ["localhost"],
+							"port": "8000",
+							"path": ["permisos"]
+						},
+						"description": "Lista todos los permisos globales disponibles"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Permiso",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:8000/permisos/1",
+							"protocol": "http",
+							"host": ["localhost"],
+							"port": "8000",
+							"path": ["permisos", "1"]
+						},
+						"description": "Obtiene un permiso específico por ID"
+					},
+					"response": []
+				},
+				{
+					"name": "Update Permiso",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"accion\": \"update\",\n  \"recurso\": \"documento\"\n}"
+						},
+						"url": {
+							"raw": "http://localhost:8000/permisos/1",
+							"protocol": "http",
+							"host": ["localhost"],
+							"port": "8000",
+							"path": ["permisos", "1"]
+						},
+						"description": "Actualiza un permiso (solo dueños)"
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Permiso",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:8000/permisos/1",
+							"protocol": "http",
+							"host": ["localhost"],
+							"port": "8000",
+							"path": ["permisos", "1"]
+						},
+						"description": "Elimina un permiso (solo dueños, solo si no está en uso)"
+					},
+					"response": []
+				}
+			]
+		}
+	],
+	"variable": [
+		{
+			"key": "base_url",
+			"value": "http://localhost:8000",
+			"type": "string"
+		}
+	]
+}
+
