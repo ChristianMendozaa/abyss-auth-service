@@ -877,15 +877,3 @@ Todos los campos tienen validaciones según las restricciones de la base de dato
 
 5. **Dueños vs Empleados:** Los dueños (`es_dueno=true`) tienen acceso completo sin necesidad de permisos específicos.
 
-## 🤝 Contribuciones
-
-Este es un microservicio privado. Para modificaciones, contacta al equipo de desarrollo.
-
-## 📄 Licencia
-
-[Especificar licencia según corresponda]
-
----
-
-**Versión:** 1.0.0  
-**Última actualización:** 2024
